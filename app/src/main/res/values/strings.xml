@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Aria VPN</string>
+    <string name="vpn_channel_name">وضعیت فیلتر شکن</string>
+    <string name="vpn_channel_desc">نمایش وضعیت اتصال فعال فیلتر شکن</string>
+    <string name="vpn_notification_connected">متصل به سرور امن</string>
+    <string name="vpn_notification_connecting">در حال برقراری اتصال امن…</string>
+    <string name="vpn_notification_disconnect">قطع اتصال</string>
+</resources>

@@ -1,0 +1,6 @@
+{
+  "name": "Aria VPN",
+  "description": "فیلتر شکن پرسرعت و امن با سرورهای آمریکا، هلند و آلمان، تنظیم کنتراست و تمدید زمان رایگان",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
