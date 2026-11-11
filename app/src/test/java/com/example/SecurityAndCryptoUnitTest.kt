@@ -64,4 +64,16 @@ class SecurityAndCryptoUnitTest {
         val fastest = com.example.vpn.VpnStateManager.selectFastestServer()
         assertTrue(fastest.id.isNotEmpty())
     }
+
+    @Test
+    fun testMeasureAndSelectFastestOnLaunch() {
+        kotlinx.coroutines.runBlocking {
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            com.example.vpn.VpnStateManager.initialize(context)
+
+            val fastest = com.example.vpn.VpnStateManager.measureAndSelectFastestOnLaunch()
+            assertTrue(fastest.id.isNotEmpty())
+            assertTrue(listOf("us_ny_free", "nl_ams_free", "de_fra_free").contains(fastest.id))
+        }
+    }
 }

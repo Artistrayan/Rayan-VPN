@@ -491,4 +491,24 @@ object VpnStateManager {
         selectServer(fastest)
         return fastest
     }
+
+    /**
+     * Measures initial network latency of primary servers (USA, Netherlands, Germany)
+     * and automatically selects the server with the lowest ping for Auto-Connect on launch.
+     */
+    suspend fun measureAndSelectFastestOnLaunch(): VpnServer = withContext(Dispatchers.IO) {
+        val targetIds = listOf("us_ny_free", "nl_ams_free", "de_fra_free")
+        val currentServers = _serversFlow.value
+        val targets = currentServers.filter { targetIds.contains(it.id) }
+
+        val measured = targets.map { server ->
+            val livePing = measureRealSocketPing(server.pingHost, fallbackMs = server.pingMs)
+            server.copy(pingMs = livePing)
+        }
+
+        val fastest = measured.minByOrNull { it.pingMs } ?: targets.firstOrNull() ?: currentServers.first()
+        selectServer(fastest)
+        _fastestServerFlow.value = fastest
+        fastest
+    }
 }

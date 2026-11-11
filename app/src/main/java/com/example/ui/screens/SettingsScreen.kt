@@ -149,10 +149,10 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Auto Connect
+                // Auto Connect to Lowest Latency Server
                 SwitchOptionRow(
-                    title = "اتصال خودکار هنگام باز شدن برنامه",
-                    desc = "به محض اجرای برنامه، بلافاصله به سرور پیش‌فرض وصل شو",
+                    title = "اتصال خودکار به سریع‌ترین سرور (Auto-Connect)",
+                    desc = "در شروع برنامه، پینگ سرورهای آمریکا، هلند و آلمان سنجیده شده و به‌صورت خودکار به سرور با کمترین تاخیر وصل می‌شود",
                     checked = sessionState.isAutoConnectEnabled,
                     onCheckedChange = onAutoConnectToggle
                 )
