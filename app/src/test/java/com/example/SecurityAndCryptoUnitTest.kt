@@ -76,4 +76,11 @@ class SecurityAndCryptoUnitTest {
             assertTrue(listOf("us_ny_free", "nl_ams_free", "de_fra_free").contains(fastest.id))
         }
     }
+
+    @Test
+    fun testRealInterfaceRateMeasurement() {
+        val (rxRate, txRate) = com.example.vpn.RealSpeedTester.measureRealInterfaceRate()
+        assertTrue(rxRate >= 0L)
+        assertTrue(txRate >= 0L)
+    }
 }

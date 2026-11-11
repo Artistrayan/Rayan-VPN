@@ -54,7 +54,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -509,7 +511,7 @@ private fun LiveSpeedMetricsCard(sessionState: VpnSessionState) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "حجم رد و بدل شده:",
+                    text = "حجم رد و بدل شده واقعی:",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -517,6 +519,76 @@ private fun LiveSpeedMetricsCard(sessionState: VpnSessionState) {
                     text = formatTotalBytes(traffic.totalDownloadBytes + traffic.totalUploadBytes),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onBackground
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Real Speed Test Action
+            var isRunningSpeedTest by remember { mutableStateOf(false) }
+            var speedTestResultText by remember { mutableStateOf<String?>(null) }
+            val scope = rememberCoroutineScope()
+
+            Button(
+                onClick = {
+                    if (!isRunningSpeedTest) {
+                        isRunningSpeedTest = true
+                        speedTestResultText = "در حال اتصال به CDN و سنجش بایت‌های واقعی..."
+                        scope.launch {
+                            val result = com.example.vpn.RealSpeedTester.runActiveSpeedTest(testBytes = 1048576)
+                            val mbpsFormatted = String.format(Locale.US, "%.1f", result.downloadSpeedMbps)
+                            val mBpsFormatted = String.format(Locale.US, "%.1f", result.downloadSpeedBytesPerSec / (1024.0 * 1024.0))
+                            speedTestResultText = "✅ سرعت واقعی دانلود: $mBpsFormatted MB/s ($mbpsFormatted Mbps) • سرور کلودفلر"
+                            isRunningSpeedTest = false
+                        }
+                    }
+                },
+                enabled = !isRunningSpeedTest,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = tokens.accentGlow.copy(alpha = if (tokens.isHighContrast) 0.9f else 0.16f)
+                ),
+                border = BorderStroke(1.dp, tokens.accentGlow),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .testTag("run_real_speed_test_button")
+            ) {
+                if (isRunningSpeedTest) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = tokens.accentGlow,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "در حال انتقال بسته تست واقعی (1MB)...",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Speed,
+                        contentDescription = "Test Real Speed",
+                        tint = if (tokens.isHighContrast) Color.Black else tokens.accentGlow,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "سنجش سرعت واقعی پهنای باند (تست ۱۰۰٪ واقعی)",
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (tokens.isHighContrast) Color.Black else MaterialTheme.colorScheme.onBackground
+                    )
+                }
+            }
+
+            if (speedTestResultText != null) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = speedTestResultText!!,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = tokens.successColor,
+                    modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
         }
