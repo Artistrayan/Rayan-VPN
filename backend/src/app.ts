@@ -114,13 +114,21 @@ export async function buildApp(): Promise<FastifyInstance> {
           message: "This installation or WireGuard key is already registered."
         });
       }
+      const enrolledDevice = inserted.rows[0];
+      if (!enrolledDevice) {
+        await client.query("ROLLBACK");
+        return reply.code(503).send({
+          error: "enrollment_unavailable",
+          message: "Device enrollment could not be completed."
+        });
+      }
       await client.query("COMMIT");
       reply.header("cache-control", "no-store");
       reply.header("pragma", "no-cache");
       return reply.code(201).send({
-        deviceId: inserted.rows[0].id,
+        deviceId: enrolledDevice.id,
         deviceToken,
-        createdAt: inserted.rows[0].created_at.toISOString()
+        createdAt: enrolledDevice.created_at.toISOString()
       });
     } catch (error) {
       await client.query("ROLLBACK").catch(() => undefined);
