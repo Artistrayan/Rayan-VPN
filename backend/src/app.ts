@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import { z } from "zod";
 import { config } from "./config.js";
 import { checkDatabase, database } from "./database.js";
 
