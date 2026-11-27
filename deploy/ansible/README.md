@@ -68,7 +68,8 @@ public key. Set its status to `provisioning` until the control plane can
 authenticate the gateway and verify a successful health check. Do not mark it
 `healthy` manually merely to make it appear in the Android server list.
 
-The playbook currently configures IPv4 NAT only. IPv6 is intentionally not
-advertised to clients until routed IPv6, firewall policy, and leak tests are
-implemented. The first release must use a client profile with an explicit
-IPv4-only AllowedIPs policy until IPv6 support is verified.
+The playbook currently configures IPv4 NAT only. Until routed IPv6 and its
+firewall policy are implemented, the Android client profile must route both
+0.0.0.0/0 and ::/0 into the tunnel. The gateway must not forward IPv6, so IPv6
+traffic is intentionally dropped rather than escaping through the device's
+physical network. Do not use an IPv4-only AllowedIPs list: that can leak IPv6.
