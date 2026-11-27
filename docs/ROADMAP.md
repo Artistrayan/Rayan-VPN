@@ -61,3 +61,14 @@ A connection is accepted as operational only if all of the following are true:
 5. DNS and IPv6 leak tests pass for the supported device/network matrix.
 6. Actual byte counters increase when traffic is transferred.
 7. Disconnect/reconnect and network handover behave as specified.
+
+## M1 implementation notes — Android WireGuard engine
+
+- The official WireGuard tunnel AAR is integrated through Maven Central.
+- The app delegates VPN interface ownership to `GoBackend.VpnService`; the app's own service only orchestrates foreground lifecycle and telemetry.
+- Tunnel profiles are parsed by WireGuard's own `Config` parser and stored encrypted with an Android Keystore AES-GCM key.
+- The connection service refuses to report CONNECTED unless a profile exists, the GoBackend tunnel is UP, and a peer handshake has been observed.
+- Traffic totals and rates come only from WireGuard peer statistics. Unknown exit IP, ping and jitter remain unknown.
+- Region cards are non-operational until the control plane provisions and health-checks real nodes.
+- Rewarded-ad quota grants are disabled until server-side validation is implemented.
+- Remaining gate: provision a real node and connect the control plane to deliver a per-device configuration.

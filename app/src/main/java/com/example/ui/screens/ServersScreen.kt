@@ -114,7 +114,7 @@ fun ServersScreen(
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "سرورهای رایگان آمریکا، هلند و آلمان به همراه نودهای اختصاصی VIP",
+                    text = "موقعیت‌های هدف شبکه؛ تا راه‌اندازی و تأیید سرور واقعی غیرفعال هستند.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -169,6 +169,9 @@ fun ServersScreen(
                     isSelected = server.id == selectedServer.id,
                     isVipUser = isVipActive,
                     onSelect = {
+                        if (!server.isOperational) {
+                            return@ServerListItem
+                        }
                         if (server.isVip && !isVipActive) {
                             onUpgradeVipClick()
                         } else {
@@ -189,6 +192,7 @@ fun ServersScreen(
         // Floating Ping Refresh Button
         FloatingActionButton(
             onClick = onRefreshPings,
+            enabled = servers.any { it.isOperational },
             containerColor = tokens.accentGlow,
             contentColor = Color.Black,
             shape = CircleShape,
@@ -252,6 +256,7 @@ private fun ServerListItem(
 
     Surface(
         onClick = onSelect,
+        enabled = server.isOperational,
         shape = RoundedCornerShape(16.dp),
         color = if (isSelected) tokens.accentGlow.copy(alpha = 0.12f) else tokens.cardBackground,
         border = BorderStroke(
@@ -305,7 +310,7 @@ private fun ServerListItem(
                             }
                         }
                         Text(
-                            text = "${server.cityFa} • ${server.serverAddress}",
+                            text = if (server.isOperational) "${server.cityFa} • ${server.serverAddress}" else "${server.cityFa} • در انتظار راه‌اندازی نود واقعی",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -314,7 +319,11 @@ private fun ServerListItem(
 
                 // Default Toggle & Selection Indicator
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    PingBadge(pingMs = server.pingMs)
+                    if (server.isOperational) {
+                        PingBadge(pingMs = server.pingMs)
+                    } else {
+                        Text("غیرفعال", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
 
                     Spacer(modifier = Modifier.width(6.dp))
 
@@ -359,8 +368,8 @@ private fun ServerListItem(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Server Load Bar
-            Row(
+            // Real node load is shown only after a node is provisioned and health-checked.
+            if (server.isOperational) Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -371,7 +380,7 @@ private fun ServerListItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 LinearProgressIndicator(
-                    progress = { server.loadPercentage / 100f },
+                    progress = { server.loadPercentage.coerceIn(0, 100) / 100f },
                     modifier = Modifier
                         .width(90.dp)
                         .height(4.dp)
@@ -382,6 +391,12 @@ private fun ServerListItem(
                         else -> Color(0xFFFF3D71)
                     },
                     trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                )
+            } else {
+                Text(
+                    text = "پینگ و ظرفیت پس از فعال‌شدن نود نمایش داده می‌شود.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }

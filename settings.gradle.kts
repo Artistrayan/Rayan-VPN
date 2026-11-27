@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Aria VPN"
+rootProject.name = "Rayan VPN"
 
 include(":app")

@@ -59,11 +59,8 @@ data class VpnServer(
     val loadPercentage: Int,
     val isVip: Boolean,
     val isDefault: Boolean = false,
-    val supportedProtocols: List<VpnProtocol> = listOf(
-        VpnProtocol.WIREGUARD,
-        VpnProtocol.V2RAY,
-        VpnProtocol.SHADOWSOCKS
-    )
+    val isOperational: Boolean = false,
+    val supportedProtocols: List<VpnProtocol> = listOf(VpnProtocol.WIREGUARD)
 )
 
 data class RealTimeLatencyReport(
@@ -80,8 +77,8 @@ data class LiveTrafficStats(
     val uploadSpeedBps: Long = 0L,
     val totalDownloadBytes: Long = 0L,
     val totalUploadBytes: Long = 0L,
-    val pingMs: Int = 45,
-    val jitterMs: Int = 3
+    val pingMs: Int = 0,
+    val jitterMs: Int = 0
 )
 
 data class VpnSessionState(
@@ -94,7 +91,7 @@ data class VpnSessionState(
     val vipExpiryDate: String = "",
     val traffic: LiveTrafficStats = LiveTrafficStats(),
     val activeProtocol: VpnProtocol = VpnProtocol.WIREGUARD,
-    val assignedIp: String = "185.220.101.45",
+    val assignedIp: String = "",
     val contrastMode: ContrastMode = ContrastMode.CYBER_DARK,
     val isKillSwitchEnabled: Boolean = false,
     val isAutoConnectEnabled: Boolean = false,

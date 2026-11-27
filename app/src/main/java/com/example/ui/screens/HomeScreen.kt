@@ -70,7 +70,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.components.CyberCard
 import com.example.ui.components.PingBadge
-import com.example.ui.components.RewardedAdDialog
 import com.example.ui.components.formatByteRate
 import com.example.ui.components.formatTotalBytes
 import com.example.ui.theme.LocalContrastTokens
@@ -83,11 +82,9 @@ import java.util.Locale
 fun HomeScreen(
     sessionState: VpnSessionState,
     onConnectToggle: () -> Unit,
-    onSelectServerClick: () -> Unit,
-    onAddRewardMinutes: (String, Int) -> Unit
+    onSelectServerClick: () -> Unit
 ) {
     val tokens = LocalContrastTokens.current
-    var showAdDialog by remember { mutableStateOf(false) }
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseScale by infiniteTransition.animateFloat(
@@ -218,7 +215,7 @@ fun HomeScreen(
         // Status description text
         Text(
             text = when (sessionState.status) {
-                VpnStatus.CONNECTED -> "فیلتر شکن فعال و اینترنت شما کاملاً رمزنگاری شده است"
+                VpnStatus.CONNECTED -> "تونل WireGuard فعال است"
                 VpnStatus.CONNECTING -> sessionState.connectionStepMessage.ifBlank { "در حال برقراری اتصال با سرور..." }
                 VpnStatus.DISCONNECTING -> "در حال قطع نشست امن..."
                 VpnStatus.DISCONNECTED -> "برای عبور امن از فیلترینگ دکمه بالا را لمس کنید"
@@ -231,10 +228,12 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Connection Timer Card with +10 Min Button
-        SessionTimerCard(
-            sessionState = sessionState,
-            onAddRewardClick = { showAdDialog = true }
+        Text(
+            text = "مدیریت سهمیه و پاداش پس از راه‌اندازی زیرساخت مرکزی فعال می‌شود.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 18.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -250,15 +249,6 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(24.dp))
     }
 
-    // Rewarded Ad Dialog
-    if (showAdDialog) {
-        RewardedAdDialog(
-            onDismiss = { showAdDialog = false },
-            onRewardEarned = { nonce ->
-                onAddRewardMinutes(nonce, 10)
-            }
-        )
-    }
 }
 
 @Composable
@@ -320,7 +310,7 @@ private fun ServerSelectionBanner(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                PingBadge(pingMs = currentServer.pingMs)
+                if (currentServer.isOperational) PingBadge(pingMs = currentServer.pingMs) else Text("آماده‌سازی", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
                     imageVector = Icons.Default.ChevronLeft,
@@ -466,7 +456,7 @@ private fun LiveSpeedMetricsCard(sessionState: VpnSessionState) {
                 }
 
                 Text(
-                    text = "پینگ: ${traffic.pingMs} ms",
+                    text = if (traffic.pingMs > 0) "پینگ: ${traffic.pingMs} ms" else "پینگ: —",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -682,7 +672,7 @@ private fun SecurityInfoPill(sessionState: VpnSessionState) {
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "IP: ${sessionState.assignedIp}",
+                text = if (sessionState.assignedIp.isBlank()) "IP: پس از اتصال واقعی" else "IP: ${sessionState.assignedIp}",
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onBackground
             )

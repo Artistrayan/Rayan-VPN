@@ -3,7 +3,6 @@ package com.example
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.net.VpnService
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -68,6 +67,7 @@ import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.SubscriptionScreen
 import com.example.ui.theme.AriaVpnTheme
 import com.example.ui.theme.LocalContrastTokens
+import com.wireguard.android.backend.GoBackend
 import com.example.vpn.AriaVpnService
 import com.example.vpn.VpnStateManager
 import com.example.vpn.model.VpnStatus
@@ -123,7 +123,7 @@ fun MainAppScaffold(
         if (result.resultCode == Activity.RESULT_OK) {
             AriaVpnService.startVpn(context)
             scope.launch {
-                snackbarHostState.showSnackbar("اتصال فیلتر شکن برقرار شد")
+                snackbarHostState.showSnackbar("درخواست اتصال ثبت شد؛ وضعیت پس از تأیید WireGuard نمایش داده می‌شود")
             }
         } else {
             scope.launch {
@@ -140,7 +140,7 @@ fun MainAppScaffold(
             }
         } else {
             // Check real system permission via VpnService.prepare()
-            val prepareIntent: Intent? = VpnService.prepare(context)
+            val prepareIntent: Intent? = GoBackend.VpnService.prepare(context)
             if (prepareIntent != null) {
                 // Request OS permission
                 vpnPrepareLauncher.launch(prepareIntent)
@@ -325,17 +325,7 @@ fun MainAppScaffold(
                     0 -> HomeScreen(
                         sessionState = sessionState,
                         onConnectToggle = { handleConnectToggle() },
-                        onSelectServerClick = { selectedTab = 1 },
-                        onAddRewardMinutes = { nonce, mins ->
-                            val success = VpnStateManager.addRewardMinutes(challengeNonce = nonce, minutes = mins, context = context)
-                            scope.launch {
-                                if (success) {
-                                    snackbarHostState.showSnackbar("تبریک! +$mins دقیقه به زمان اتصال شما افزوده شد")
-                                } else {
-                                    snackbarHostState.showSnackbar("خطای ضد تقلب: چالش زمان تبلیغ نامعتبر است!")
-                                }
-                            }
-                        }
+                        onSelectServerClick = { selectedTab = 1 }
                     )
 
                     1 -> ServersScreen(

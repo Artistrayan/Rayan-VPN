@@ -2,6 +2,7 @@ package com.example.vpn
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.SystemClock
 import com.example.security.SecurityGuard
 import com.example.vpn.model.ContrastMode
 import com.example.vpn.model.LiveTrafficStats
@@ -26,131 +27,17 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.InetSocketAddress
 import java.net.Socket
-import kotlin.random.Random
 
 object VpnStateManager {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private lateinit var prefs: SharedPreferences
 
-    // Available Servers with requested USA, Netherlands, and Germany as primary choices
+    // Planned regions only. No endpoint is advertised until a real node is provisioned and health-checked.
     val availableServers = listOf(
-        VpnServer(
-            id = "us_ny_free",
-            countryNameFa = "ایالات متحده آمریکا",
-            countryNameEn = "United States",
-            countryCode = "US",
-            cityFa = "نیویورک",
-            cityEn = "New York",
-            flagEmoji = "🇺🇸",
-            serverAddress = "us-east.ariavpn.net",
-            pingHost = "1.1.1.1",
-            pingMs = 52,
-            loadPercentage = 48,
-            isVip = false,
-            isDefault = true
-        ),
-        VpnServer(
-            id = "nl_ams_free",
-            countryNameFa = "هلند",
-            countryNameEn = "Netherlands",
-            countryCode = "NL",
-            cityFa = "آمستردام",
-            cityEn = "Amsterdam",
-            flagEmoji = "🇳🇱",
-            serverAddress = "nl-ams.ariavpn.net",
-            pingHost = "8.8.8.8",
-            pingMs = 41,
-            loadPercentage = 39,
-            isVip = false,
-            isDefault = false
-        ),
-        VpnServer(
-            id = "de_fra_free",
-            countryNameFa = "آلمان",
-            countryNameEn = "Germany",
-            countryCode = "DE",
-            cityFa = "فرانکفورت",
-            cityEn = "Frankfurt",
-            flagEmoji = "🇩🇪",
-            serverAddress = "de-fra.ariavpn.net",
-            pingHost = "9.9.9.9",
-            pingMs = 38,
-            loadPercentage = 44,
-            isVip = false,
-            isDefault = false
-        ),
-        // Additional High-Performance VIP Servers
-        VpnServer(
-            id = "us_la_vip",
-            countryNameFa = "آمریکا (۱۰ گیگابیت اختصاصی)",
-            countryNameEn = "US Ultra 10Gbps",
-            countryCode = "US",
-            cityFa = "لس‌آنجلس",
-            cityEn = "Los Angeles",
-            flagEmoji = "🇺🇸",
-            serverAddress = "us-vip.ariavpn.net",
-            pingHost = "1.0.0.1",
-            pingMs = 45,
-            loadPercentage = 18,
-            isVip = true
-        ),
-        VpnServer(
-            id = "de_munich_vip",
-            countryNameFa = "آلمان (مخصوص گیمینگ و پینگ پایین)",
-            countryNameEn = "Germany Gaming Low-Ping",
-            countryCode = "DE",
-            cityFa = "مونیخ",
-            cityEn = "Munich",
-            flagEmoji = "🇩🇪",
-            serverAddress = "de-game.ariavpn.net",
-            pingHost = "8.8.4.4",
-            pingMs = 29,
-            loadPercentage = 22,
-            isVip = true
-        ),
-        VpnServer(
-            id = "nl_stream_vip",
-            countryNameFa = "هلند (استریم و دانلود نامحدود)",
-            countryNameEn = "Netherlands Streaming VIP",
-            countryCode = "NL",
-            cityFa = "روتردام",
-            cityEn = "Rotterdam",
-            flagEmoji = "🇳🇱",
-            serverAddress = "nl-p2p.ariavpn.net",
-            pingHost = "149.112.112.112",
-            pingMs = 35,
-            loadPercentage = 26,
-            isVip = true
-        ),
-        VpnServer(
-            id = "gb_lon_vip",
-            countryNameFa = "انگلستان (پایداری بالا)",
-            countryNameEn = "United Kingdom",
-            countryCode = "GB",
-            cityFa = "لندن",
-            cityEn = "London",
-            flagEmoji = "🇬🇧",
-            serverAddress = "uk-lon.ariavpn.net",
-            pingHost = "208.67.222.222",
-            pingMs = 49,
-            loadPercentage = 31,
-            isVip = true
-        ),
-        VpnServer(
-            id = "ca_tor_vip",
-            countryNameFa = "کانادا (امنیت مضاعف)",
-            countryNameEn = "Canada Secure",
-            countryCode = "CA",
-            cityFa = "تورنتو",
-            cityEn = "Toronto",
-            flagEmoji = "🇨🇦",
-            serverAddress = "ca-tor.ariavpn.net",
-            pingHost = "1.1.1.1",
-            pingMs = 58,
-            loadPercentage = 25,
-            isVip = true
-        )
+        VpnServer("de_fra_free", "آلمان", "Germany", "DE", "فرانکفورت", "Frankfurt", "🇩🇪", "", "", 0, 0, false, isDefault = true),
+        VpnServer("nl_ams_free", "هلند", "Netherlands", "NL", "آمستردام", "Amsterdam", "🇳🇱", "", "", 0, 0, false),
+        VpnServer("us_ny_free", "ایالات متحده آمریکا", "United States", "US", "نیویورک", "New York", "🇺🇸", "", "", 0, 0, false)
     )
 
     val subscriptionPlans = listOf(
@@ -354,29 +241,20 @@ object VpnStateManager {
         }
     }
 
+    fun updateTunnelStats(traffic: LiveTrafficStats, elapsedSec: Long) {
+        _sessionState.update {
+            it.copy(traffic = traffic, elapsedSeconds = elapsedSec, assignedIp = "")
+        }
+    }
+
     /**
      * Requirement: Add 10 minutes when rewarded ad is watched
      * Anti-Cheat: Requires challenge nonce and minimum watch duration
      */
+    @Suppress("UNUSED_PARAMETER")
     fun addRewardMinutes(challengeNonce: String? = null, minutes: Int = 10, context: Context? = null): Boolean {
-        if (challengeNonce != null && !SecurityGuard.verifyAdReward(challengeNonce)) {
-            return false // Anti-Cheat: Reject fraudulent reward call!
-        }
-
-        val additionalSeconds = minutes * 60L
-        _sessionState.update {
-            val newRemaining = it.remainingSeconds + additionalSeconds
-            val newTotalAllowed = it.totalSessionAllowedSeconds + additionalSeconds
-            it.copy(
-                remainingSeconds = newRemaining,
-                totalSessionAllowedSeconds = newTotalAllowed
-            )
-        }
-        // Also inform running service via broadcast or action intent
-        context?.let { ctx ->
-            AriaVpnService.addRewardTime(ctx, additionalSeconds)
-        }
-        return true
+        // Reward grants remain disabled until a real ad SDK callback is verified server-side.
+        return false
     }
 
     fun resetSessionTimer() {
@@ -406,88 +284,74 @@ object VpnStateManager {
     /**
      * Performs a real socket connection test to measure network ping/latency in milliseconds.
      */
-    private suspend fun measureRealSocketPing(host: String, fallbackMs: Int): Int = withContext(Dispatchers.IO) {
-        val start = System.currentTimeMillis()
-        var socket: Socket? = null
+    private suspend fun measureRealSocketPing(
+        host: String,
+        @Suppress("UNUSED_PARAMETER") fallbackMs: Int
+    ): Int = withContext(Dispatchers.IO) {
+        if (host.isBlank()) return@withContext 0
+        val startedAt = SystemClock.elapsedRealtime()
         try {
-            socket = Socket()
-            // Port 53 (DNS) or 443 (HTTPS)
-            socket.connect(InetSocketAddress(host, 53), 1200)
-            val duration = (System.currentTimeMillis() - start).toInt()
-            if (duration in 10..400) duration else fallbackMs
+            Socket().use { socket -> socket.connect(InetSocketAddress(host, 443), 1200) }
+            (SystemClock.elapsedRealtime() - startedAt).toInt().takeIf { it in 1..5000 } ?: 0
         } catch (_: Exception) {
-            // If DNS port unreachable directly from container, introduce slight realistic variation
-            val jitter = Random.nextInt(-4, 5)
-            (fallbackMs + jitter).coerceIn(25, 180)
-        } finally {
-            try {
-                socket?.close()
-            } catch (_: Exception) { }
+            0
         }
     }
 
     fun startRealTimeLatencyMonitor() {
         latencyMonitorJob?.cancel()
         latencyMonitorJob = scope.launch {
-            val targetServerIds = listOf("us_ny_free", "nl_ams_free", "de_fra_free")
-
             while (isActive) {
-                val currentServers = _serversFlow.value
-                val primaryTargets = currentServers.filter { targetServerIds.contains(it.id) }
-
-                val updatedReports = primaryTargets.map { server ->
-                    val livePing = measureRealSocketPing(server.pingHost, fallbackMs = server.pingMs)
+                val targets = _serversFlow.value.filter { it.isOperational && it.pingHost.isNotBlank() }
+                if (targets.isEmpty()) {
+                    _latencyReportsFlow.value = emptyList()
+                    delay(3500)
+                    continue
+                }
+                val reports = targets.map { server ->
+                    val livePing = measureRealSocketPing(server.pingHost, fallbackMs = 0)
                     val history = pingHistoryMap.getOrPut(server.id) { mutableListOf() }
-                    history.add(livePing)
-                    if (history.size > 5) history.removeAt(0)
-
-                    val maxPing = history.maxOrNull() ?: livePing
-                    val minPing = history.minOrNull() ?: livePing
-                    val jitter = abs(maxPing - minPing) / 2
-
-                    val qualityLabel = when {
-                        livePing < 45 -> "بسیار عالی (Ultra Low)"
-                        livePing < 75 -> "عالی (Fast)"
-                        livePing < 110 -> "خوب (Good)"
+                    if (livePing > 0) {
+                        history.add(livePing)
+                        if (history.size > 5) history.removeAt(0)
+                    }
+                    val jitter = if (history.size > 1) {
+                        ((history.maxOrNull() ?: livePing) - (history.minOrNull() ?: livePing)) / 2
+                    } else 0
+                    val quality = when {
+                        livePing == 0 -> "در دسترس نیست"
+                        livePing < 45 -> "بسیار عالی"
+                        livePing < 75 -> "عالی"
+                        livePing < 110 -> "خوب"
                         else -> "متوسط"
                     }
-
                     RealTimeLatencyReport(
                         server = server.copy(pingMs = livePing),
                         currentPingMs = livePing,
-                        jitterMs = jitter.coerceAtLeast(1),
+                        jitterMs = jitter,
                         pingHistory = history.toList(),
-                        isFastest = false,
-                        qualityLabelFa = qualityLabel
+                        qualityLabelFa = quality
                     )
                 }
-
-                // Identify the fastest server dynamically
-                val minReport = updatedReports.minByOrNull { it.currentPingMs }
-                val finalizedReports = updatedReports.map { report ->
-                    report.copy(isFastest = report.server.id == minReport?.server?.id)
+                val fastest = reports.filter { it.currentPingMs > 0 }.minByOrNull { it.currentPingMs }
+                _latencyReportsFlow.value = reports.map {
+                    it.copy(isFastest = it.server.id == fastest?.server?.id)
                 }
-
-                if (minReport != null) {
-                    _fastestServerFlow.value = minReport.server
-                }
-                _latencyReportsFlow.value = finalizedReports
-
-                // Update server list with live pings
-                val pingMap = finalizedReports.associate { it.server.id to it.currentPingMs }
+                if (fastest != null) _fastestServerFlow.value = fastest.server
+                val pingMap = reports.associate { it.server.id to it.currentPingMs }
                 _serversFlow.update { list ->
-                    list.map { s ->
-                        pingMap[s.id]?.let { s.copy(pingMs = it) } ?: s
-                    }
+                    list.map { server -> pingMap[server.id]?.let { server.copy(pingMs = it) } ?: server }
                 }
-
                 delay(3500)
             }
         }
     }
 
     fun selectFastestServer(): VpnServer {
-        val fastest = _fastestServerFlow.value
+        val fastest = _serversFlow.value
+            .filter { it.isOperational && it.pingMs > 0 }
+            .minByOrNull { it.pingMs }
+            ?: _sessionState.value.currentServer
         selectServer(fastest)
         return fastest
     }
@@ -497,16 +361,13 @@ object VpnStateManager {
      * and automatically selects the server with the lowest ping for Auto-Connect on launch.
      */
     suspend fun measureAndSelectFastestOnLaunch(): VpnServer = withContext(Dispatchers.IO) {
-        val targetIds = listOf("us_ny_free", "nl_ams_free", "de_fra_free")
-        val currentServers = _serversFlow.value
-        val targets = currentServers.filter { targetIds.contains(it.id) }
-
+        val targets = _serversFlow.value.filter { it.isOperational && it.pingHost.isNotBlank() }
+        if (targets.isEmpty()) return@withContext _sessionState.value.currentServer
         val measured = targets.map { server ->
-            val livePing = measureRealSocketPing(server.pingHost, fallbackMs = server.pingMs)
-            server.copy(pingMs = livePing)
+            server.copy(pingMs = measureRealSocketPing(server.pingHost, fallbackMs = 0))
         }
-
-        val fastest = measured.minByOrNull { it.pingMs } ?: targets.firstOrNull() ?: currentServers.first()
+        val fastest = measured.filter { it.pingMs > 0 }.minByOrNull { it.pingMs }
+            ?: return@withContext _sessionState.value.currentServer
         selectServer(fastest)
         _fastestServerFlow.value = fastest
         fastest
