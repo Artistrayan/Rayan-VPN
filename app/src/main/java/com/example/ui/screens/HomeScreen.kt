@@ -218,7 +218,7 @@ fun HomeScreen(
                 VpnStatus.CONNECTED -> "تونل WireGuard فعال است"
                 VpnStatus.CONNECTING -> sessionState.connectionStepMessage.ifBlank { "در حال برقراری اتصال با سرور..." }
                 VpnStatus.DISCONNECTING -> "در حال قطع نشست امن..."
-                VpnStatus.DISCONNECTED -> "برای عبور امن از فیلترینگ دکمه بالا را لمس کنید"
+                VpnStatus.DISCONNECTED -> sessionState.connectionStepMessage.ifBlank { "برای اتصال، ابتدا باید سرور واقعی راه‌اندازی شود." }
             },
             style = MaterialTheme.typography.bodyMedium,
             color = if (isConnected) tokens.successColor else MaterialTheme.colorScheme.onSurfaceVariant,
