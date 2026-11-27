@@ -1,0 +1,13 @@
+---
+wireguard_interface: wg0
+wireguard_listen_port: 51820
+wireguard_server_address: 10.77.0.1/24
+wireguard_client_network: 10.77.0.0/24
+wireguard_mtu: 1380
+wireguard_private_key_path: /etc/wireguard/private.key
+wireguard_config_path: /etc/wireguard/wg0.conf
+wireguard_service_name: wg-quick@wg0
+wireguard_packages:
+  - wireguard-tools
+  - iptables
+  - iproute2
