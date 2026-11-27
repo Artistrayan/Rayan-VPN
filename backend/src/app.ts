@@ -48,7 +48,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         dependencies: { postgres: "ok" }
       };
     } catch (error) {
-      requestLogFailure(app, error);
+      logOperationalFailure(app, error);
       return reply.code(503).send({
         status: "not_ready",
         dependencies: { postgres: "unavailable" }
@@ -132,7 +132,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       });
     } catch (error) {
       await client.query("ROLLBACK").catch(() => undefined);
-      requestLogFailure(app, error);
+      logOperationalFailure(app, error);
       return reply.code(503).send({
         error: "enrollment_unavailable",
         message: "Device enrollment is temporarily unavailable."
@@ -193,7 +193,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         }))
       };
     } catch (error) {
-      requestLogFailure(app, error);
+      logOperationalFailure(app, error);
       return reply.code(503).send({
         error: "server_registry_unavailable",
         message: "The server registry is temporarily unavailable."
@@ -204,7 +204,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   return app;
 }
 
-function requestLogFailure(app: FastifyInstance, error: unknown): void {
+function logOperationalFailure(app: FastifyInstance, error: unknown): void {
   // Error details stay in server logs; the public readiness response is intentionally generic.
-  app.log.error({ err: error }, "Readiness check failed");
+  app.log.error({ err: error }, "Control-plane operation failed");
 }
