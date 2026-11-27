@@ -1,30 +1,41 @@
 # Rayan VPN
 
-Rayan VPN is an Android-first VPN product targeting a global audience. The product model is hybrid: a usable free tier supported by clearly disclosed in-app advertising, plus an optional premium subscription. Initial access must be possible without creating an account; accounts are optional and used for cross-device entitlement, purchases, and support features.
+Rayan VPN is an Android-first VPN product targeting a global audience.
 
 ## Product decisions
 
 - Product: **Rayan VPN**
 - Platform: Android first
-- VPN data plane: WireGuard
-- Android integration: Android `VpnService` with the official WireGuard tunnel implementation
+- VPN data plane: official WireGuard Android tunnel implementation
 - Hosting: multiple independent infrastructure providers across regions
-- Account model: optional for initial connection
-- Revenue: free tier + optional advertising/rewarded ads + premium subscription
-- Backend: TypeScript, Fastify, PostgreSQL, Redis (Redis is introduced when rate limits/session coordination require it)
+- Account model: optional; initial access is designed to work without an account
+- Revenue: free tier supported by clearly disclosed advertising, plus optional premium subscription
+- Control plane: TypeScript, Fastify, PostgreSQL; Redis is introduced when distributed rate limits and coordination require it
 
 ## Repository layout
 
 - `app/`: Android application (Kotlin, Jetpack Compose)
 - `backend/`: control-plane API (Fastify, TypeScript)
-- `infra/`: server provisioning and hardening (to be added)
+- `infra/`: gateway provisioning and hardening (not yet implemented)
 - `docs/`: architecture, security, and delivery decisions
 
-## Important current-state warning
+## Current implementation status
 
-The existing Android UI and service are a prototype, not a production VPN. The current `AriaVpnService` establishes an Android TUN interface but does not attach a WireGuard userspace tunnel or forward packets. It also contains simulated traffic counters, randomized latency, and placeholder exit IP addresses. Therefore the current app must **not** be described or released as providing a working VPN until the real WireGuard data plane and end-to-end leak tests are implemented.
+### Android
 
-See [Repository audit](docs/REPOSITORY_AUDIT.md), [Architecture](docs/ARCHITECTURE.md), and [Roadmap](docs/ROADMAP.md).
+- The app integrates the official WireGuard Android userspace backend.
+- WireGuard profiles are parsed by the official configuration parser and encrypted at rest using Android Keystore AES-GCM.
+- Traffic counters come from the WireGuard backend.
+- The app reports CONNECTED only after the backend is up and a peer handshake is observed.
+- No production gateway profile is currently provisioned. A fresh installation therefore fails closed instead of connecting to a placeholder server.
+
+### Control plane
+
+- Fastify service, PostgreSQL connection pool, liveness and readiness endpoints are present.
+- `GET /api/v1/servers` lists only database gateways whose health status is `healthy`. It never invents regions, endpoints, latency, or capacity.
+- Anonymous device enrollment, key registration, gateway peer reconciliation, and device-specific profile issuance are not yet implemented.
+
+**This repository is not yet a usable production VPN service.** A real gateway fleet, authenticated device enrollment, secure peer provisioning, routing/NAT, DNS and IPv6 policy, abuse controls, and end-to-end leak testing are required before public release.
 
 ## Development
 
@@ -39,17 +50,17 @@ npm install
 npm run dev
 ```
 
-The API exposes liveness and readiness endpoints. Readiness requires a working PostgreSQL connection.
+The API exposes liveness, readiness, and healthy-gateway discovery endpoints. Readiness requires a working PostgreSQL connection.
 
 ### Android
 
-Open the repository in the current stable Android Studio and use the Gradle wrapper. Do not configure production endpoints or signing credentials in source control. The real WireGuard integration is a release blocker and is tracked in the roadmap.
+Open the repository in a current stable Android Studio installation. Use the Gradle wrapper if one is added to the repository, or the configured Gradle installation in CI. Do not commit production endpoints, signing credentials, gateway private keys, or device private keys.
 
 ## Security principles
 
+- Generate WireGuard private keys locally; only public keys are registered with the control plane.
 - Never log VPN payloads, private keys, authentication tokens, or full tunnel configurations.
-- Generate device WireGuard private keys locally; only public keys are registered with the control plane.
-- Do not claim a connection is secure until the WireGuard tunnel handshake and routing are verified.
+- Do not claim a connection is secure until the WireGuard handshake and routing are verified.
 - Keep the control plane separate from the VPN packet data plane.
-- Use least-privilege server credentials, encrypted transport, strict firewall rules, and auditable infrastructure changes.
+- Use least-privilege gateway credentials, encrypted transport, strict firewall rules, and auditable infrastructure changes.
 - Collect the minimum operational metadata needed for abuse prevention and service reliability.
