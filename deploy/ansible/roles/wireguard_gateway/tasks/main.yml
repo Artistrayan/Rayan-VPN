@@ -55,26 +55,32 @@
       - --system
   changed_when: false
 
-- name: Install WireGuard interface configuration template
+- name: Render WireGuard configuration template without secrets
   ansible.builtin.template:
     src: wg0.conf.j2
-    dest: "{{ wireguard_config_path }}"
+    dest: "{{ wireguard_config_path }}.template"
     owner: root
     group: root
     mode: "0600"
 
-- name: Inject gateway private key on the gateway host only
+- name: Build final WireGuard config on gateway without exporting private key
   ansible.builtin.shell:
     cmd: |
       set -eu
-      if grep -q '^PrivateKey = __RAYAN_WG_PRIVATE_KEY__$' "{{ wireguard_config_path }}"; then
-        key="$(cat "{{ wireguard_private_key_path }}")"
-        sed -i "s|^PrivateKey = __RAYAN_WG_PRIVATE_KEY__$|PrivateKey = ${key}|" "{{ wireguard_config_path }}"
-        printf 'private-key-injected\n'
+      key="$(cat "{{ wireguard_private_key_path }}")"
+      tmp="$(mktemp /etc/wireguard/wg0.conf.XXXXXX)"
+      trap 'rm -f "$tmp"' EXIT
+      sed "s|^PrivateKey = __RAYAN_WG_PRIVATE_KEY__$|PrivateKey = ${key}|" "{{ wireguard_config_path }}.template" > "$tmp"
+      chmod 0600 "$tmp"
+      if ! cmp -s "$tmp" "{{ wireguard_config_path }}"; then
+        mv "$tmp" "{{ wireguard_config_path }}"
+        trap - EXIT
+        printf 'wireguard-config-updated\n'
       fi
-  register: wireguard_private_key_injection
-  changed_when: "'private-key-injected' in wireguard_private_key_injection.stdout"
+  register: wireguard_config_render
+  changed_when: "'wireguard-config-updated' in wireguard_config_render.stdout"
   no_log: true
+  notify: Restart WireGuard
 
 - name: Enable and start WireGuard
   ansible.builtin.systemd:
@@ -82,5 +88,3 @@
     enabled: true
     state: started
     daemon_reload: true
-    # Restart after configuration changes, including key rotation.
-  notify: Restart WireGuard
