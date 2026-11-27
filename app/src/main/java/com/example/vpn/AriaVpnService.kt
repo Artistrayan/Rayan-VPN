@@ -111,7 +111,7 @@ class AriaVpnService : VpnService() {
 
                 // Establish real Android VpnService interface
                 val builder = Builder()
-                    .setSession("Aria VPN - ${currentServer.cityEn}")
+                    .setSession("Rayan VPN - ${currentServer.cityEn}")
                     .addAddress("10.8.0.2", 32)
                     .addRoute("0.0.0.0", 0)
                     .addDnsServer("1.1.1.1")
@@ -260,7 +260,7 @@ class AriaVpnService : VpnService() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("فیلتر شکن Aria VPN")
+            .setContentTitle("Rayan VPN")
             .setContentText(contentText)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingOpenApp)
