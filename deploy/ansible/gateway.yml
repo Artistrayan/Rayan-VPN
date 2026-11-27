@@ -1,0 +1,25 @@
+---
+- name: Provision a Rayan VPN WireGuard gateway
+  hosts: rayan_vpn_gateways
+  become: true
+  gather_facts: true
+  serial: 1
+
+  pre_tasks:
+    - name: Require supported Linux distribution
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == "Ubuntu"
+          - ansible_facts.distribution_version is version("22.04", ">=")
+          - ansible_facts.distribution_major_version | int >= 22
+          - ansible_default_ipv4.interface is defined
+          - gateway_endpoint_host is defined
+          - gateway_region is defined
+          - gateway_country is defined
+          - gateway_city is defined
+        fail_msg: >-
+          This role currently supports Ubuntu 22.04+ gateways with a public
+          IPv4 route. Configure gateway metadata and endpoint in inventory.
+
+  roles:
+    - wireguard_gateway
