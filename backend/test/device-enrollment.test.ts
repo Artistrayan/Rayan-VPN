@@ -41,7 +41,7 @@ describe("anonymous device enrollment", () => {
       payload: {
         installationId: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         platform: "android",
-        wireGuardPublicKey: "not-a-wireguard-key"
+        wireGuardPublicKey: "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       }
     });
 
