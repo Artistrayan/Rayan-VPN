@@ -74,7 +74,12 @@ Responses include `Cache-Control: no-store`. Duplicate installation identifiers 
 
 **Deployment requirement:** apply `backend/migrations/001_initial_schema.sql` and then `backend/migrations/002_device_enrollment.sql` before enabling this route in a deployed control plane.
 
-The credential is not yet accepted by any device-authenticated endpoint. Credential refresh/recovery, revocation, gateway peer reconciliation, and device-specific profile issuance remain pending. A client that loses its local credential cannot recover it from the server; a dedicated secure recovery/re-enrollment flow is required.
+The credential is accepted by the following device endpoints:
+
+- `GET /api/v1/devices/me`: validates the bearer credential and updates `last_seen_at`.
+- `DELETE /api/v1/devices/me`: revokes the current device credential and device record; returns `204` on success.
+
+Both endpoints return `401` for missing, malformed, revoked, or unknown credentials. The credential is never returned again after enrollment. A client that loses its local credential cannot recover it from the server; a dedicated secure recovery/re-enrollment flow is required.
 
 ## Not yet implemented
 
@@ -82,9 +87,8 @@ The following operations are still required before the client can receive a usab
 
 The following operations must be added before a client can receive a usable tunnel profile:
 
-1. Authenticated device-token verification and revocation.
-2. Gateway peer reconciliation using authenticated, least-privilege gateway control credentials.
-3. Atomic tunnel-address allocation and per-device profile issuance.
-4. Device/session lifecycle endpoints and safe credential recovery.
+1. Gateway peer reconciliation using authenticated, least-privilege gateway control credentials.
+2. Atomic tunnel-address allocation and per-device profile issuance.
+3. Secure credential recovery/re-enrollment after device migration or reinstall.
 
 Never accept a client-supplied WireGuard private key. The server must never return a shared or static peer configuration to multiple devices.
