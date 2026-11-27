@@ -14,10 +14,15 @@
     group: root
     mode: "0700"
 
+- name: Inspect gateway private key
+  ansible.builtin.stat:
+    path: "{{ wireguard_private_key_path }}"
+  register: wireguard_private_key_stat
+
 - name: Generate gateway private key locally on the gateway
   ansible.builtin.shell:
-    cmd: "umask 077; test -s {{ wireguard_private_key_path }} || wg genkey > {{ wireguard_private_key_path }}"
-    creates: "{{ wireguard_private_key_path }}"
+    cmd: "umask 077; wg genkey > {{ wireguard_private_key_path }}"
+  when: not wireguard_private_key_stat.stat.exists or wireguard_private_key_stat.stat.size | int == 0
   no_log: true
 
 - name: Enforce gateway private key ownership and permissions
@@ -28,15 +33,11 @@
     group: root
     mode: "0600"
 
-- name: Read gateway public key
-  ansible.builtin.command:
-    argv:
-      - wg
-      - pubkey
-    stdin: "{{ lookup('ansible.builtin.file', wireguard_private_key_path) }}"
+- name: Read gateway public key without exporting its private key
+  ansible.builtin.shell:
+    cmd: "wg pubkey < {{ wireguard_private_key_path }}"
   register: wireguard_gateway_public_key
   changed_when: false
-  no_log: true
 
 - name: Enable IPv4 forwarding persistently
   ansible.builtin.copy:
@@ -54,14 +55,26 @@
       - --system
   changed_when: false
 
-- name: Install WireGuard interface configuration
+- name: Install WireGuard interface configuration template
   ansible.builtin.template:
     src: wg0.conf.j2
     dest: "{{ wireguard_config_path }}"
     owner: root
     group: root
     mode: "0600"
-  notify: Restart WireGuard
+
+- name: Inject gateway private key on the gateway host only
+  ansible.builtin.shell:
+    cmd: |
+      set -eu
+      if grep -q '^PrivateKey = __RAYAN_WG_PRIVATE_KEY__$' "{{ wireguard_config_path }}"; then
+        key="$(cat "{{ wireguard_private_key_path }}")"
+        sed -i "s|^PrivateKey = __RAYAN_WG_PRIVATE_KEY__$|PrivateKey = ${key}|" "{{ wireguard_config_path }}"
+        printf 'private-key-injected\n'
+      fi
+  register: wireguard_private_key_injection
+  changed_when: "'private-key-injected' in wireguard_private_key_injection.stdout"
+  no_log: true
 
 - name: Enable and start WireGuard
   ansible.builtin.systemd:
@@ -69,3 +82,5 @@
     enabled: true
     state: started
     daemon_reload: true
+    # Restart after configuration changes, including key rotation.
+  notify: Restart WireGuard
