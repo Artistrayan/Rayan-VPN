@@ -1,5 +1,6 @@
 package com.example.vpn
 
+import com.example.BuildConfig
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -69,6 +70,9 @@ class AriaVpnService : Service() {
         VpnStateManager.updateStatus(VpnStatus.CONNECTING, "در حال بررسی پیکربندی معتبر سرور…")
         connectionJob = serviceScope.launch {
             try {
+                if (BuildConfig.CONTROL_PLANE_BASE_URL.isNotBlank()) {
+                    DeviceEnrollmentClient(DeviceEnrollmentStore(applicationContext)).enrollIfNeeded()
+                }
                 val selectedServer = VpnStateManager.sessionState.value.currentServer
                 val configuration = WireGuardConfigStore(applicationContext).load(selectedServer.id)
                     ?: throw IllegalStateException(
