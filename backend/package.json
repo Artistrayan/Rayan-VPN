@@ -2,6 +2,7 @@
   "name": "@rayan-vpn/control-plane",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Rayan VPN control-plane API",
   "engines": {
     "node": ">=22"
