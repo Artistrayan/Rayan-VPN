@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">Rayan VPN</string>
     <string name="vpn_channel_name">وضعیت Rayan VPN</string>
-    <string name="vpn_channel_desc">نمایش وضعیت اتصال VPN</string>
-    <string name="vpn_notification_connected">تونل WireGuard فعال است</string>
-    <string name="vpn_notification_connecting">در حال برقراری تونل امن…</string>
+    <string name="vpn_channel_desc">نمایش وضعیت سرویس VPN</string>
+    <string name="vpn_notification_connected">وضعیت تونل</string>
+    <string name="vpn_notification_connecting">در حال بررسی اتصال امن…</string>
     <string name="vpn_notification_disconnect">قطع اتصال</string>
 </resources>
