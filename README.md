@@ -33,7 +33,10 @@ Rayan VPN is an Android-first VPN product targeting a global audience.
 
 - Fastify service, PostgreSQL connection pool, liveness and readiness endpoints are present.
 - `GET /api/v1/servers` lists only database gateways whose health status is `healthy`. It never invents regions, endpoints, latency, or capacity.
-- Anonymous device enrollment, key registration, gateway peer reconciliation, and device-specific profile issuance are not yet implemented.
+- Anonymous Android device enrollment stores only the device's WireGuard public key and a hash of the issued device credential.
+- Device credentials can be checked and revoked through authenticated control-plane endpoints.
+- Gateway peer reconciliation and device-specific tunnel profile issuance are not yet implemented.
+- The Android app creates its WireGuard key pair locally and encrypts the private key and device credential with an Android Keystore-protected AES-GCM record. Enrollment starts only when a control-plane URL is configured at build time.
 
 **This repository is not yet a usable production VPN service.** A real gateway fleet, authenticated device enrollment, secure peer provisioning, routing/NAT, DNS and IPv6 policy, abuse controls, and end-to-end leak testing are required before public release.
 
