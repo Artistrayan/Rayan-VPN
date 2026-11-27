@@ -3,7 +3,7 @@ import { config } from "./config.js";
 
 export const database = new Pool({
   connectionString: config.databaseUrl,
-  ssl: config.databaseSsl ? { rejectUnauthorized: true } : undefined,
+  ...(config.databaseSsl ? { ssl: { rejectUnauthorized: true } } : {}),
   max: 10,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 5_000,
