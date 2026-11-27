@@ -1,0 +1,13 @@
+all:
+  children:
+    rayan_vpn_gateways:
+      hosts:
+        de-fra-01:
+          ansible_host: 203.0.113.10 # Replace with the real gateway public IPv4.
+          ansible_user: ubuntu
+          ansible_port: 22
+          ansible_ssh_private_key_file: ~/.ssh/rayan-vpn-gateway
+          gateway_region: de-fra
+          gateway_country: DE
+          gateway_city: Frankfurt
+          gateway_endpoint_host: vpn.example.com # Replace with DNS pointing to this gateway.
