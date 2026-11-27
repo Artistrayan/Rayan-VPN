@@ -142,6 +142,63 @@ export async function buildApp(): Promise<FastifyInstance> {
     }
   });
 
+  app.get("/api/v1/devices/me", async (request, reply) => {
+    const deviceToken = readBearerToken(request.headers.authorization);
+    if (!deviceToken) {
+      return reply.code(401).send({ error: "unauthorized" });
+    }
+    const tokenHash = createHash("sha256").update(deviceToken, "utf8").digest();
+    try {
+      const result = await database.query<{
+        id: string;
+        platform: string;
+        created_at: Date;
+        last_seen_at: Date | null;
+      }>(
+        `UPDATE devices
+            SET last_seen_at = now()
+          WHERE device_token_hash = $1 AND status = 'active'
+          RETURNING id, platform, created_at, last_seen_at`,
+        [tokenHash]
+      );
+      const device = result.rows[0];
+      if (!device) return reply.code(401).send({ error: "unauthorized" });
+      reply.header("cache-control", "no-store");
+      return {
+        deviceId: device.id,
+        platform: device.platform,
+        createdAt: device.created_at.toISOString(),
+        lastSeenAt: device.last_seen_at?.toISOString() ?? null
+      };
+    } catch (error) {
+      logOperationalFailure(app, error);
+      return reply.code(503).send({ error: "device_lookup_unavailable" });
+    }
+  });
+
+  app.delete("/api/v1/devices/me", async (request, reply) => {
+    const deviceToken = readBearerToken(request.headers.authorization);
+    if (!deviceToken) {
+      return reply.code(401).send({ error: "unauthorized" });
+    }
+    const tokenHash = createHash("sha256").update(deviceToken, "utf8").digest();
+    try {
+      const result = await database.query(
+        `UPDATE devices
+            SET status = 'revoked', revoked_at = now()
+          WHERE device_token_hash = $1 AND status = 'active'
+          RETURNING id`,
+        [tokenHash]
+      );
+      if (result.rowCount !== 1) return reply.code(401).send({ error: "unauthorized" });
+      reply.code(204);
+      return null;
+    } catch (error) {
+      logOperationalFailure(app, error);
+      return reply.code(503).send({ error: "device_revocation_unavailable" });
+    }
+  });
+
   app.get("/api/v1/servers", async (request, reply) => {
     const querySchema = z.object({
       region: z.string().regex(/^[a-z0-9-]{2,32}$/i).optional()
@@ -207,4 +264,10 @@ export async function buildApp(): Promise<FastifyInstance> {
 function logOperationalFailure(app: FastifyInstance, error: unknown): void {
   // Error details stay in server logs; the public readiness response is intentionally generic.
   app.log.error({ err: error }, "Control-plane operation failed");
+}
+
+function readBearerToken(header: string | undefined): string | null {
+  if (!header?.startsWith("Bearer ")) return null;
+  const token = header.slice(7).trim();
+  return /^[A-Za-z0-9_-]{40,64}$/.test(token) ? token : null;
 }
