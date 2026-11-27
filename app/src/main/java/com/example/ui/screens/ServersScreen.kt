@@ -190,9 +190,8 @@ fun ServersScreen(
         }
 
         // Floating Ping Refresh Button
-        FloatingActionButton(
+        if (servers.any { it.isOperational }) FloatingActionButton(
             onClick = onRefreshPings,
-            enabled = servers.any { it.isOperational },
             containerColor = tokens.accentGlow,
             contentColor = Color.Black,
             shape = CircleShape,
