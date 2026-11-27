@@ -1,5 +1,11 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 
+val controlPlaneBaseUrl = providers.gradleProperty("CONTROL_PLANE_BASE_URL")
+  .orElse(providers.environmentVariable("CONTROL_PLANE_BASE_URL"))
+  .getOrElse("")
+  .replace("\\", "\\\\")
+  .replace("\"", "\\\"")
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -18,6 +24,7 @@ android {
     targetSdk = 36
     versionCode = 1
     versionName = "1.0"
+    buildConfigField("String", "CONTROL_PLANE_BASE_URL", "\"$controlPlaneBaseUrl\"")
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
