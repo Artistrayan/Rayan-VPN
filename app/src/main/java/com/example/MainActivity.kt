@@ -159,7 +159,7 @@ fun MainAppScaffold(
             snackbarHostState.showSnackbar(
                 "⚡ اتصال خودکار: سرور ${fastest.cityFa} با کمترین پینگ (${fastest.pingMs}ms) انتخاب شد"
             )
-            val prepareIntent: Intent? = VpnService.prepare(context)
+            val prepareIntent: Intent? = GoBackend.VpnService.prepare(context)
             if (prepareIntent == null) {
                 AriaVpnService.startVpn(context)
             } else {
