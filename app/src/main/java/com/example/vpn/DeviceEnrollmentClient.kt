@@ -1,5 +1,6 @@
 package com.example.vpn
 
+import com.example.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -16,7 +17,7 @@ import java.util.concurrent.TimeUnit
  */
 class DeviceEnrollmentClient(
     private val store: DeviceEnrollmentStore,
-    controlPlaneBaseUrl: String,
+    controlPlaneBaseUrl: String = BuildConfig.CONTROL_PLANE_BASE_URL,
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(8, TimeUnit.SECONDS)
         .readTimeout(12, TimeUnit.SECONDS)
