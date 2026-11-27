@@ -1,0 +1,9 @@
+[Interface]
+Address = {{ wireguard_server_address }}
+ListenPort = {{ wireguard_listen_port }}
+PrivateKey = {{ wireguard_private_key_path }}
+MTU = {{ wireguard_mtu }}
+SaveConfig = false
+
+PostUp = iptables -A FORWARD -i %i -o {{ ansible_default_ipv4.interface }} -j ACCEPT; iptables -A FORWARD -i {{ ansible_default_ipv4.interface }} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -A POSTROUTING -s {{ wireguard_client_network }} -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -o {{ ansible_default_ipv4.interface }} -j ACCEPT; iptables -D FORWARD -i {{ ansible_default_ipv4.interface }} -o %i -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT; iptables -t nat -D POSTROUTING -s {{ wireguard_client_network }} -o {{ ansible_default_ipv4.interface }} -j MASQUERADE
