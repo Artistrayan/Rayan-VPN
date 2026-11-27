@@ -1,8 +1,6 @@
 {
-  "name": "Aria VPN",
-  "description": "فیلتر شکن پرسرعت و امن با سرورهای آمریکا، هلند و آلمان، تنظیم کنتراست و تمدید زمان رایگان",
+  "name": "Rayan VPN",
+  "description": "Android-first privacy VPN with a global WireGuard network, optional account registration, a free tier, and optional premium features.",
   "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "majorCapabilities": []
 }
