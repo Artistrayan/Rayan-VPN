@@ -42,8 +42,10 @@ ansible-playbook -i inventory/hosts.yml gateway.yml
 ```
 
 The check-mode command must use the real inventory file after you create it.
-The private key is generated on the remote gateway and is never fetched by
-Ansible. The playbook suppresses output from key handling.
+The private key is generated on the remote gateway and never exported to the
+Ansible controller. The final WireGuard config is assembled on the gateway with
+root-only permissions; its private-key field is therefore also protected by
+mode 0600. The playbook suppresses output from key handling.
 
 ## Verify on the gateway
 
