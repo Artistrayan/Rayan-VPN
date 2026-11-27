@@ -51,6 +51,28 @@ describe("anonymous device enrollment", () => {
     });
   });
 
+
+  it("rejects missing device credentials without querying the database", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/devices/me"
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ error: "unauthorized" });
+  });
+
+  it("rejects malformed bearer credentials without querying the database", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/devices/me",
+      headers: { authorization: "Bearer invalid" }
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toMatchObject({ error: "unauthorized" });
+  });
+
   it("rejects unexpected enrollment fields", async () => {
     const response = await app.inject({
       method: "POST",
