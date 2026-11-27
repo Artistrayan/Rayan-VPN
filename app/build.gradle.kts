@@ -1,11 +1,5 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 
-val controlPlaneBaseUrl = providers.gradleProperty("CONTROL_PLANE_BASE_URL")
-  .orElse(providers.environmentVariable("CONTROL_PLANE_BASE_URL"))
-  .getOrElse("")
-  .replace("\\", "\\\\")
-  .replace("\"", "\\\"")
-
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -13,6 +7,12 @@ plugins {
   alias(libs.plugins.secrets)
   alias(libs.plugins.google.services)
 }
+
+val controlPlaneBaseUrl = providers.gradleProperty("CONTROL_PLANE_BASE_URL")
+  .orElse(providers.environmentVariable("CONTROL_PLANE_BASE_URL"))
+  .getOrElse("")
+  .replace("\\", "\\\\")
+  .replace("\"", "\\\"")
 
 android {
   namespace = "com.example"
